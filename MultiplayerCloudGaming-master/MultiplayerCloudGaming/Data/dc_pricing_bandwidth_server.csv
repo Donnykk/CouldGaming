@@ -1,0 +1,14 @@
+,bandwidth,g2.8xlarge,g2.2xlarge
+ec2-us-east,0.09,2.6,0.65
+ec2-oregon,0.09,2.6,0.65
+ec2-california,0.09,2.808,0.702
+ec2-europe,0.09,2.808,0.702
+ec2-singapore,0.12,4,1
+ec2-tokyo,0.14,3.592,0.898
+ec2-sao-paulo,0.25,3.72,0.93
+azure-east-asia,0.138,4.604,1.151
+azure-east-us,0.087,3.012,0.753
+azure-north-europe,0.087,2.804,0.701
+azure-southeast-asia,0.138,4,1
+azure-west-europe,0.087,3.224,0.806
+azure-west-us,0.087,2.808,0.702

@@ -1,0 +1,1 @@
+Fixed this bug in ServerAllocation_acmmm: ExperimentalSetupGeneral() does not update the "coverableClients", hence methods like LCW that use coverableClients for updating the unassignedCoverableClients do not perform correctly for the general problem, that is, they will always use the same coverableClients/eligibleDatacenters in the iteration of all G-server locations.

@@ -1,0 +1,21 @@
+08 March, 2016
+Updates to be added:
+- Output the latency for each client after its assignment is determined (good, done)
+- Functions to write results into files (not neccessary)
+
+10 March, 2016
+Redefine the allocation strategies:
+- latency driven (nearest assignment)
+- server price driven (two versions: one is on per-client-basis, the other is on per-dc-basis)
+- bandwidth price driven (two versions: one is on per-client-basis, the other is on per-dc-basis)
+- combined price driven(two versions: one is on per-client-basis, the other is on per-dc-basis)
+
+21 March, 2016
+- Lowest-Server-Price-No-Wastage-First-Batch-Assignment (LSPNCWFB) and other similar methods produce incorrect results (delay bounds violate) and still don't know why, so just using Lowest-Server-Price-First-Batch-Assignment (LSPFB) and other similar methods instead
+- Lowest-Capacity-Wastage-First-Batch-Assignment (LCWFB) produces the best results in all settings
+
+22 March, 2016
+- Lowest-Server-Price-First-Batch-Assignment (LSPFB) and other similar methods are having similar performances with LSP and other similar methods, so it's not neccessary to include them in the comparison
+
+07 April, 2016
+Fixed this bug in ServerAllocation_acmmm: ExperimentalSetupGeneral() does not update the "coverableClients", hence methods like LCW that use coverableClients for updating the unassignedCoverableClients do not perform correctly for the general problem, that is, they will always use the same coverableClients/eligibleDatacenters in the iteration of all G-server locations.

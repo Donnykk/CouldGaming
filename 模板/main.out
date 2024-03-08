@@ -1,0 +1,19 @@
+\BOOKMARK [0][-]{section*.1}{摘 要 }{}% 1
+\BOOKMARK [0][-]{section*.2}{Abstract\040}{}% 2
+\BOOKMARK [0][-]{section*.3}{目 录 }{}% 3
+\BOOKMARK [0][-]{chapter.1}{第1章 绪论}{}% 4
+\BOOKMARK [0][-]{chapter.2}{第2章 文献综述}{}% 5
+\BOOKMARK [0][-]{chapter.3}{第3章 问题阐述}{}% 6
+\BOOKMARK [1][-]{section.3.1}{第1节 定义与符号表示}{chapter.3}% 7
+\BOOKMARK [1][-]{section.3.2}{第2节 问题描述}{chapter.3}% 8
+\BOOKMARK [1][-]{section.3.3}{第3节 NP难解性}{chapter.3}% 9
+\BOOKMARK [0][-]{chapter.4}{第4章 算法设计}{}% 10
+\BOOKMARK [1][-]{section.4.1}{第1节 基础算法}{chapter.4}% 11
+\BOOKMARK [2][-]{subsection.4.1.1}{4.1.1 最低组合价算法 Lowest-Combined-Price}{section.4.1}% 12
+\BOOKMARK [2][-]{subsection.4.1.2}{4.1.2 最低延迟算法 Lowest-Latency}{section.4.1}% 13
+\BOOKMARK [1][-]{section.4.2}{第2节 启发式算法}{chapter.4}% 14
+\BOOKMARK [2][-]{subsection.4.2.1}{4.2.1\040Hill-Climbing\040Assignment}{section.4.2}% 15
+\BOOKMARK [2][-]{subsection.4.2.2}{4.2.2\040Simulated-Annealing\040Assignment}{section.4.2}% 16
+\BOOKMARK [0][-]{chapter.5}{第5章 实验评估}{}% 17
+\BOOKMARK [0][-]{chapter.6}{第6章 结论}{}% 18
+\BOOKMARK [0][-]{section*.4}{致 谢 }{}% 19
