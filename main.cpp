@@ -7,72 +7,117 @@ Server::Server(int id, int workload)
 {
     this->server_id = id;
     this->workload = workload;
-    this->available = true;
-    this->empty = true;
 }
 Server::~Server() {}
 int Server::getServerId() { return this->server_id; }
 int Server::getWorkload() { return this->workload; }
 void Server::setWorkload(int workload) { this->workload = workload; }
-bool Server::isAvailable() { return this->available; }
-void Server::setAvailable(bool available) { this->available = available; }
-bool Server::isEmpty() { return this->empty; }
-void Server::setEmpty(bool empty) { this->empty = empty; }
 
 ServerCenter::ServerCenter(int id)
 {
-    this->available_index = 0;
+    this->available_index = -1;
     this->center_id = id;
-    this->server_num = rand() % 9 + 2;
-    cout << "Initialize ServerCenter " << this->center_id << ", Server number: " << this->server_num << " ." << endl;
-    for (int i = 0; i < this->server_num; i++)
-    {
-        int workload = rand() % 2000 + 1000;
-        Server s(i + 1, workload);
-        this->serverList.push_back(s);
-        cout << "Initialize Server " << i + 1 << " , workload: " << workload << endl;
-    }
-    cout << endl;
+    // this->server_price = 100 * (rand() % 10) + 1000;
+    this->server_price = 1000;
+    cout << "Initialize ServerCenter " << this->center_id << "  Server Price:" << this->server_price << endl;
 }
 ServerCenter::~ServerCenter() {}
 int ServerCenter::getCenterId() { return this->center_id; }
-int ServerCenter::getServerNum() { return this->server_num; }
 int ServerCenter::getAvailableIndex() { return this->available_index; }
 void ServerCenter::setAvailableIndex(int index) { this->available_index = index; }
-vector<Server> ServerCenter::getServerList() { return this->serverList; }
+int ServerCenter::getServerPrice() { return this->server_price; }
+vector<Server *> ServerCenter::getServerList() { return this->serverList; }
+void ServerCenter::newServer(Server *s) { this->serverList.push_back(s); };
 
-Client::Client(int id, int workload, int data)
+Client::Client(int id, int data)
 {
     this->client_id = id;
-    this->workload = workload;
     this->data = data;
-    cout << "Initialize Client " << this->client_id << " , workload: " << this->workload << endl;
+    cout << "Initialize Client " << this->client_id << " , data: " << this->data << endl;
 }
 Client::~Client() {}
 int Client::getClientId() { return this->client_id; }
-int Client::getWorkload() { return this->workload; }
 int Client::getData() { return this->data; }
-void Client::addPart(Part p) { this->screenDivider.push_back(p); }
-vector<Part> Client::getScreenDivider() { return this->screenDivider; }
+int Client::getWorkLoad() { return this->work_load; }
+int Client::getAllocateCenterId() { return this->allocate_center_id; };
+void Client::setAllocateCenterId(int allocate_center_id) { this->allocate_center_id = allocate_center_id; };
+int Client::getAllocateServerId() { return this->allocate_server_id; };
+void Client::setAllocateServerId(int allocate_server_id) { this->allocate_server_id = allocate_server_id; };
 
-Part::Part(int center_id, int server_id, int client_id)
+vector<vector<int>> ReadFile(const string input_file_name)
 {
-    this->center_id = center_id;
-    this->server_id = server_id;
-    this->client_id = client_id;
-}
-float Part::getProportion() { return this->proportion; }
-void Part::setProportion(float p) { this->proportion = p; }
-int Part::getCenterId() { return this->center_id; }
-int Part::getServerId() { return this->server_id; }
-int Part::getClientId() { return this->client_id; }
+    vector<vector<int>> strings_read;
+    const char delimiter = ',';
+    fstream data_file(input_file_name, ios::in);
+    if (data_file.is_open())
+    {
+        string one_line;
+        int row_counter = 0;
+        while (std::getline(data_file, one_line))
+        {
+            row_counter++;
+            // 跳过首行
+            if ((row_counter == 1))
+                continue;
+            stringstream one_line_stream(one_line);
+            string one_string;
+            vector<int> string_list;
+            while (std::getline(one_line_stream, one_string, delimiter))
+            {
+                bool is_num = true;
+                for (char c : one_string)
+                {
+                    if (c < '0' || c > '9')
+                    {
+                        is_num = false;
+                        break;
+                    }
+                }
+                if (!is_num)
+                    continue;
+                string_list.push_back(stoi(one_string));
+            }
+            strings_read.push_back(string_list);
+        }
+        data_file.close();
+
+        if (strings_read.empty() || strings_read.front().empty())
+        {
+            std::cout << "ERROR: " << input_file_name << " is empty!\n";
+            cin.get();
+        }
+    }
+    else
+    {
+        std::cout << "ERROR: cannot open " << input_file_name << "!\n";
+        cin.get();
+    }
+    return strings_read;
+};
 
 void Init()
 {
+    latency = ReadFile("F://Environment//CloudGaming//data//dc_to_pl_rtt.csv");
+    cost = ReadFile("F://Environment//CloudGaming//data//dc_to_pl_rtt.csv");
+    /*
+    for (vector<int> v : latency)
+        {
+            for (int a : v)
+                cout << a << " ";
+            cout << endl;
+        }
+    */
+
+    N = latency.size();
+    M = latency[0].size();
+
+    serverCenterList.clear();
+    clientList.clear();
+
     cout << "ServerCenter number: " << M << " ......" << endl;
     for (int i = 0; i < M; i++)
     {
-        ServerCenter serverCenter(i + 1);
+        ServerCenter serverCenter(i);
         serverCenterList.push_back(serverCenter);
     }
     cout << endl;
@@ -80,232 +125,173 @@ void Init()
     cout << "Client number: " << N << " ......" << endl;
     for (int i = 0; i < N; i++)
     {
-        int workload = rand() % 1000 + 500;
-        int data = rand() % 100 + 50;
-        Client client(i + 1, workload, data);
+        int data = 500;
+        Client client(i, data);
         clientList.push_back(client);
     }
     cout << endl;
-
-    for (int i = 0; i < N; i++)
-        for (int j = 0; j < M; j++)
-            bandwidth[i][j] = 0;
 }
 
 void Allocate1()
 {
-    // 直接分配
-    for (Client &client : clientList)
+    // LCP
+    for (Client &c : clientList)
     {
-        int id = client.getClientId();
-        int workload_ = client.getWorkload();
-        bool allocated = false;
-        for (int i = 0; i < M; i++)
+        int cl_id = c.getClientId();
+        auto cmp = [cl_id](ServerCenter *x, ServerCenter *y)
+        { return cost[cl_id][x->getCenterId()] < cost[cl_id][y->getCenterId()]; };
+
+        // priority_queue<ServerCenter, vector<ServerCenter>, decltype(cmp)> D(cmp);
+        vector<ServerCenter *> D;
+        for (ServerCenter &sc : serverCenterList)
         {
-            if (allocated)
-                break;
-            // 延迟及带宽约束
-            if (latency[i][id] >= LantLimit || bandwidth[i][id] >= BandwidthLimit)
-                continue;
-            while (workload_)
+            int sc_id = sc.getCenterId();
+            if (latency[cl_id][sc_id] < LatLimit)
             {
-                int server_id = serverCenterList[i].getAvailableIndex();
-                Server server = serverCenterList[i].getServerList()[server_id];
-                if (workload_ <= server.getWorkload())
+                D.push_back(&sc);
+            }
+        }
+        sort(D.begin(), D.end(), cmp);
+        for (int i = 0; i < int(D.size()); i++)
+        {
+            ServerCenter *sc = D[i];
+            if (sc->getAvailableIndex() != -1)
+            {
+                Server *s = sc->getServerList()[sc->getAvailableIndex()];
+                if (s->getWorkload() >= c.getData())
                 {
-                    // 服务器有足够工作负载，分配完成
-                    Part p(i + 1, server.getServerId(), id);
-                    float prop = workload_ / client.getWorkload();
-                    p.setProportion(prop);
-                    client.addPart(p);
-                    server.setEmpty(false);
-                    if (workload_ == server.getWorkload())
-                    {
-                        server.setAvailable(false);
-                        serverCenterList[i].setAvailableIndex(server_id++);
-                    }
-                    server.setWorkload(server.getWorkload() - workload_);
-                    workload_ = 0;
-                    // 带宽
-                    bandwidth[id][i] += client.getData() * prop;
-                    // cout << "Client " << id << " allocated" << endl;
-                    allocated = true;
-                }
-                else
-                {
-                    // 服务器工作负载不够，客户端切分
-                    Part p(i + 1, server.getServerId(), id);
-                    float prop = server.getWorkload() / client.getWorkload();
-                    p.setProportion(prop);
-                    client.addPart(p);
-                    server.setEmpty(false);
-                    server.setAvailable(false);
-                    server.setWorkload(0);
-                    workload_ -= server.getWorkload();
-                    bandwidth[id][i] += client.getData() * prop;
+                    // 有可用服务器
+                    s->setWorkload(s->getWorkload() - c.getData());
+                    c.setAllocateCenterId(sc->getCenterId());
+                    c.setAllocateServerId(s->getServerId());
+                    if (s->getWorkload() == 0)
+                        sc->setAvailableIndex(-1);
+                    cout << "Client " << c.getClientId() << " allocated to center " << sc->getCenterId() << " server " << s->getServerId()
+                         << " Remain workload:" << s->getWorkload() << endl;
+                    break;
                 }
             }
+            // 无其他服务器可分配
+            bool gotosc = false;
+            ServerCenter *next = D[i + 1];
+            for (int j = i + 1; j <= int(D.size()); j++)
+            {
+                if (j == int(D.size()))
+                {
+                    gotosc = true;
+                    break;
+                }
+                next = D[j];
+                if (next->getAvailableIndex() > -1)
+                {
+                    if (next->getServerList()[next->getAvailableIndex()]->getWorkload() >= c.getData())
+                    {
+                        break;
+                    }
+                }
+            }
+            int cost_dif = cost[cl_id][next->getCenterId()] - cost[cl_id][sc->getCenterId()];
+            int data = c.getData();
+            int pr_diff = sc->getServerPrice() * float(c.getData() / WorkloadLimit);
+            if (pr_diff <= data * cost_dif || gotosc)
+            {
+                // 当前数据中心开启新服务器
+                int s_id = sc->getServerList().size();
+                Server *s = new Server(s_id, WorkloadLimit - data);
+                sc->setAvailableIndex(s_id);
+                sc->newServer(s);
+                c.setAllocateCenterId(sc->getCenterId());
+                c.setAllocateServerId(s->getServerId());
+                cout << "Client " << c.getClientId() << " allocated to center " << sc->getCenterId() << " server " << s->getServerId()
+                     << " Remain workload:" << s->getWorkload() << endl;
+                break;
+            }
+            sc = next;
+            continue;
         }
     }
 }
 
-bool cmp(const pair<int, int> &a, const pair<int, int> &b)
-{
-    return a.second < b.second;
-}
-
 void Allocate2()
 {
-    // 最低组合价
+    // LL
     for (Client &c : clientList)
     {
-        int id = c.getClientId();
-        int workload_ = c.getWorkload();
-        // int data_ = c.getData();
-        //  哈希表按value排序
-        unordered_map<int, int> spend;
-        for (ServerCenter sc : serverCenterList)
+        int cl_id = c.getClientId();
+        int data = c.getData();
+        auto cmp = [cl_id](ServerCenter *x, ServerCenter *y)
+        { return latency[cl_id][x->getCenterId()] < latency[cl_id][y->getCenterId()]; };
+        vector<ServerCenter *> D;
+        for (ServerCenter &sc : serverCenterList)
         {
-            if (latency[sc.getCenterId()][id] >= LantLimit || bandwidth[sc.getCenterId()][id] >= BandwidthLimit)
+            int sc_id = sc.getCenterId();
+            if (latency[cl_id][sc_id] < LatLimit)
+            {
+                D.push_back(&sc);
+            }
+        }
+        if (D.empty())
+        {
+            cout << "No available center for client " << c.getClientId() << endl;
+            continue;
+        }
+        sort(D.begin(), D.end(), cmp);
+        ServerCenter *sc = D[0];
+        if (sc->getAvailableIndex() >= 0)
+        {
+            Server *s = sc->getServerList()[sc->getAvailableIndex()];
+            if (s->getWorkload() >= c.getData())
+            {
+                // 有可用服务器
+                s->setWorkload(s->getWorkload() - c.getData());
+                c.setAllocateCenterId(sc->getCenterId());
+                c.setAllocateServerId(s->getServerId());
+                if (s->getWorkload() == 0)
+                    sc->setAvailableIndex(-1);
+                cout << "Client " << c.getClientId() << " allocated to center " << sc->getCenterId() << " server " << s->getServerId()
+                     << " Remain workload:" << s->getWorkload() << endl;
                 continue;
-            spend[sc.getCenterId()] = cost[c.getClientId() - 1][sc.getCenterId() - 1];
-        }
-        vector<pair<int, int>> vec;
-        for (auto x : spend)
-            vec.push_back(x);
-        sort(vec.begin(), vec.end(), cmp);
-        // for (auto x : vec)
-        //     cout << x.first << " " << x.second << endl;
-        int index = 0;
-        bool inEmpty = true;
-        while (workload_)
-        {
-            if (!inEmpty)
-            {
-                // 开启新服务器
-                int server_id = serverCenterList[vec[0].first - 1].getAvailableIndex();
-                Server server = serverCenterList[vec[0].first - 1].getServerList()[server_id];
-                if (workload_ <= server.getWorkload())
-                {
-                    // 服务器有足够工作负载，分配完成
-                    Part p(vec[0].first, server.getServerId(), id);
-                    float prop = workload_ / c.getWorkload();
-                    p.setProportion(prop);
-                    c.addPart(p);
-                    server.setEmpty(false);
-                    if (workload_ == server.getWorkload())
-                    {
-                        server.setAvailable(false);
-                        serverCenterList[vec[0].first].setAvailableIndex(server_id++);
-                    }
-                    server.setWorkload(server.getWorkload() - workload_);
-                    workload_ = 0;
-                    bandwidth[id][vec[0].first] += c.getData() * prop;
-                }
-                else
-                {
-                    Part p(vec[0].first, server.getServerId(), id);
-                    float prop = server.getWorkload() / c.getWorkload();
-                    p.setProportion(prop);
-                    c.addPart(p);
-                    server.setEmpty(false);
-                    server.setAvailable(false);
-                    serverCenterList[vec[0].first].setAvailableIndex(server_id++);
-                    server.setWorkload(0);
-                    workload_ -= server.getWorkload();
-                    bandwidth[id][vec[0].first] += c.getData() * prop;
-                }
-            }
-            else
-            {
-                // TODO
-                while (true)
-                {
-                    if (index == int(vec.size()))
-                    {
-                        inEmpty = false;
-                        break;
-                    }
-                    int center_id = vec[index].first - 1;
-                    int server_id = serverCenterList[center_id].getAvailableIndex();
-                    Server server = serverCenterList[center_id].getServerList()[server_id];
-                    if (server.isEmpty())
-                        index++;
-                    else
-                        break;
-                }
-                if (!inEmpty)
-                    continue;
-                int server_id = serverCenterList[vec[index].first].getAvailableIndex();
-                Server server = serverCenterList[vec[index].first].getServerList()[server_id];
-                if (workload_ <= server.getWorkload())
-                {
-                    Part p(vec[index].first, server.getServerId(), id);
-                    float prop = workload_ / c.getWorkload();
-                    p.setProportion(prop);
-                    c.addPart(p);
-                    if (workload_ == server.getWorkload())
-                    {
-                        server.setAvailable(false);
-                        serverCenterList[vec[index].first].setAvailableIndex(server_id++);
-                    }
-                    server.setWorkload(server.getWorkload() - workload_);
-                    workload_ = 0;
-                    bandwidth[id][vec[index].first] += c.getData() * prop;
-                }
-                else
-                {
-                    Part p(vec[index].first, server.getServerId(), id);
-                    float prop = server.getWorkload() / c.getWorkload();
-                    p.setProportion(prop);
-                    c.addPart(p);
-                    server.setAvailable(false);
-                    serverCenterList[vec[index].first].setAvailableIndex(server_id++);
-                    server.setWorkload(0);
-                    workload_ -= server.getWorkload();
-                    bandwidth[id][vec[index].first] += c.getData() * prop;
-                }
             }
         }
+        int s_id = sc->getServerList().size();
+        Server *s = new Server(s_id, WorkloadLimit - data);
+        sc->setAvailableIndex(s_id);
+        sc->newServer(s);
+        c.setAllocateCenterId(sc->getCenterId());
+        c.setAllocateServerId(s->getServerId());
+        cout << "Client " << c.getClientId() << " allocated to center " << c.getAllocateCenterId() << " server " << c.getAllocateServerId()
+             << " Remain workload:" << s->getWorkload() << endl;
     }
 }
 
 void PrintInfo()
 {
-    int Cost = 0;
-    for (Client c : clientList)
+    int total_cost = 0;
+    int total_latency = 0;
+    for (Client &c : clientList)
     {
-        cout << "Client " << c.getClientId()
-             << ", workload: " << c.getWorkload()
-             << ", data: " << c.getData() << endl;
-        int trans_cost = 0;
-        int index = 0;
-        vector<Part> v = c.getScreenDivider();
-        for (Part p : v)
-        {
-            int cid = p.getCenterId();
-            int sid = p.getServerId();
-            float pro = p.getProportion();
-            trans_cost += cost[c.getClientId()][cid] * c.getData() * pro;
-            cout << "Screen Part " << ++index
-                 << ", allocated to ServerCenter " << cid
-                 << ", Server " << sid
-                 << ", Proportion: " << pro << endl;
-        }
-        Cost += trans_cost;
-        cout << "TransCost: " << trans_cost << endl;
+        int cl_id = c.getClientId();
+        int sc_id = c.getAllocateCenterId();
+        total_latency += latency[cl_id][sc_id];
+        total_cost += cost[cl_id][sc_id] * c.getData();
     }
-    for (ServerCenter sc : serverCenterList)
-        for (Server s : sc.getServerList())
-            if (!s.isEmpty())
-                Cost += ServerCost;
-    cout << "Total Cost : " << Cost << endl
-         << endl;
+    for (ServerCenter &sc : serverCenterList)
+    {
+        int num = sc.getServerList().size();
+        total_cost += num * sc.getServerPrice();
+    }
+    float average_cost = (float)total_cost / (float)clientList.size();
+    float average_latency = (float)total_latency / (float)clientList.size();
+    cout << "Average cost: " << average_cost << endl
+         << "Average latency: " << average_latency << endl;
 }
 
 int main()
 {
     srand(time(0));
+    Init();
+    Allocate1();
+    PrintInfo();
     Init();
     Allocate2();
     PrintInfo();
